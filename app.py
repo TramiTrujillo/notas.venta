@@ -14,10 +14,10 @@ def total_a_letras(total):
     centimos = int(round((total - enteros) * 100))
     return f"SON: {enteros} CON {centimos:02d}/100 SOLES"
 
-# --- Función Maestra del PDF (Diseño idéntico al solicitado) ---
+# --- Función Maestra del PDF ---
 def crear_pdf(n_nota, caja, vendedor, cliente, metodo, productos):
-    # Formato pequeño tipo ticket (80mm de ancho es estándar, usamos 100mm para legibilidad)
-    pdf = FPDF('P', 'mm', (105, 200)) 
+    # Formato tipo ticket
+    pdf = FPDF('P', 'mm', (105, 220)) 
     pdf.add_page()
     pdf.set_margins(7, 7, 7)
     
@@ -82,13 +82,18 @@ def crear_pdf(n_nota, caja, vendedor, cliente, metodo, productos):
     pdf.cell(0, 5, f"Método de pago: {metodo}", ln=True)
     pdf.ln(4)
     
-    # PIE DE PÁGINA
+    # PIE DE PÁGINA CON WHATSAPP FUNCIONAL
     pdf.set_font("Helvetica", "B", 9)
     pdf.cell(0, 5, "¡Gracias por su preferencia!", ln=True, align="C")
     pdf.set_font("Helvetica", "", 8)
     pdf.cell(0, 4, "Consulte nuestros servicios al 935534706", ln=True, align="C")
+    
+    # Enlace de WhatsApp real
     pdf.set_text_color(0, 0, 255)
-    pdf.cell(0, 4, "Presiona aquí para WhatsApp", ln=True, align="C")
+    pdf.set_font("Helvetica", "U", 8)
+    wa_url = "https://wa.me/51935534706"
+    pdf.cell(0, 4, "Presiona aquí para WhatsApp", ln=True, align="C", link=wa_url)
+    
     pdf.set_text_color(0, 0, 0)
     pdf.ln(3)
     pdf.set_font("Helvetica", "I", 7)
@@ -109,10 +114,8 @@ with st.form("datos_nota"):
         cliente = st.text_input("Cliente", value="Clientes Varios")
         metodo = st.selectbox("Método de Pago", ["Yape", "Efectivo", "Plin", "Transferencia"])
     
-    # Botón tipo SATT (Generar)
     submit_button = st.form_submit_button("Generar PDF con Texto Completo")
 
-# Gestión de productos
 st.subheader("Añadir Productos")
 c1, c2, c3 = st.columns([3, 1, 1])
 p_desc = c1.text_input("Descripción")
@@ -132,7 +135,6 @@ if st.session_state.productos:
         st.session_state.productos = []
         st.rerun()
 
-# --- Lógica de Salida ---
 if submit_button:
     if not st.session_state.productos:
         st.warning("Agrega productos antes de generar el PDF.")
