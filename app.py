@@ -18,13 +18,60 @@ CORREO = "acarlosa@unitru.edu.pe"
 if 'productos' not in st.session_state:
     st.session_state.productos = []
 
+# --- Función para generar PDF (Definida una sola vez) ---
+def crear_pdf(numero_nota, cliente, vendedor, metodo, total, productos):
+    pdf = FPDF('P', 'mm', (120, 250))
+    pdf.add_page()
+    pdf.set_font("Helvetica", "B", 10)
+    
+    # Encabezado
+    pdf.cell(100, 5, EMPRESA, ln=True, align="C")
+    pdf.set_font("Helvetica", "", 8)
+    pdf.cell(100, 5, LEMA, ln=True, align="C")
+    pdf.cell(100, 5, DIRECCION, ln=True, align="C")
+    pdf.cell(100, 5, f"WhatsApp: {CELULAR}", ln=True, align="C")
+    pdf.ln(5)
+    
+    pdf.set_font("Helvetica", "B", 10)
+    pdf.cell(100, 5, f"NOTA DE VENTA: {numero_nota}", ln=True, align="C")
+    pdf.set_font("Helvetica", "", 9)
+    pdf.cell(100, 5, f"Fecha: {datetime.now().strftime('%d/%m/%Y %H:%M')}", ln=True)
+    pdf.cell(100, 5, f"Cliente: {cliente if cliente else 'Cliente Varios'}", ln=True)
+    pdf.cell(100, 5, f"Vendedor: {vendedor}", ln=True)
+    pdf.cell(100, 5, f"Método: {metodo}", ln=True)
+    pdf.ln(2)
+    
+    # Tabla
+    pdf.set_font("Helvetica", "B", 9)
+    pdf.cell(50, 6, "Desc.", border="B")
+    pdf.cell(15, 6, "Cant.", border="B", align="R")
+    pdf.cell(15, 6, "P.U.", border="B", align="R")
+    pdf.cell(20, 6, "Total", border="B", align="R")
+    pdf.ln()
+    
+    pdf.set_font("Helvetica", "", 9)
+    for p in productos:
+        pdf.cell(50, 6, p['desc'])
+        pdf.cell(15, 6, str(p['cant']), align="R")
+        pdf.cell(15, 6, f"{p['precio']:.2f}", align="R")
+        pdf.cell(20, 6, f"{p['subtotal']:.2f}", align="R")
+        pdf.ln()
+        
+    pdf.ln(5)
+    pdf.set_font("Helvetica", "B", 10)
+    pdf.cell(100, 5, f"TOTAL: S/ {total:.2f}", ln=True, align="R")
+    
+    pdf.ln(10)
+    pdf.set_font("Helvetica", "I", 7)
+    pdf.multi_cell(100, 4, "Documento no válido como comprobante de pago ante SUNAT. Uso Informativo.", align="C")
+    
+    return pdf.output()
+
 # --- Interfaz de Usuario ---
 st.title("📄 Generador de Notas de Venta")
 
 with st.sidebar:
     st.header("Configuración de Nota")
-    # Nota: En Streamlit Cloud, el contador persistente requiere una DB. 
-    # Por ahora, lo manejamos manual o por sesión.
     numero_nv = st.number_input("Número de Nota NV-", min_value=1, value=1, step=1)
     numero_nota_str = f"NV-{numero_nv:06d}"
     
@@ -56,75 +103,32 @@ if st.button("Añadir a la lista ➕"):
             "precio": precio,
             "subtotal": subtotal
         })
+        st.rerun()
     else:
         st.warning("Escribe una descripción.")
 
-# --- Mostrar Tabla de Productos ---
+# --- Mostrar Tabla y Resultados ---
 if st.session_state.productos:
     st.divider()
-    # Convertimos a formato visual
     st.table(st.session_state.productos)
     
     total_final = sum(p['subtotal'] for p in st.session_state.productos)
     st.metric("Total a Pagar", f"S/ {total_final:.2f}")
 
-    if st.button("Limpiar Lista 🗑️"):
-        st.session_state.productos = []
-        st.rerun()
+    col_btn1, col_btn2 = st.columns(2)
+    
+    with col_btn1:
+        if st.button("Limpiar Lista 🗑️"):
+            st.session_state.productos = []
+            st.rerun()
 
-    # --- Generación de PDF ---
-    def crear_pdf():
-        pdf = FPDF('P', 'mm', (120, 250)) # Formato ticket
-        pdf.add_page()
-        pdf.set_font("Helvetica", "B", 10)
+    with col_btn2:
+        # Generamos el PDF solo si hay productos
+        pdf_output = crear_pdf(numero_nota_str, cliente, vendedor, metodo_pago, total_final, st.session_state.productos)
         
-        # Encabezado
-        pdf.cell(100, 5, EMPRESA, ln=True, align="C")
-        pdf.set_font("Helvetica", "", 8)
-        pdf.cell(100, 5, LEMA, ln=True, align="C")
-        pdf.cell(100, 5, DIRECCION, ln=True, align="C")
-        pdf.cell(100, 5, f"WhatsApp: {CELULAR}", ln=True, align="C")
-        pdf.ln(5)
-        
-        pdf.set_font("Helvetica", "B", 10)
-        pdf.cell(100, 5, f"NOTA DE VENTA: {numero_nota_str}", ln=True, align="C")
-        pdf.set_font("Helvetica", "", 9)
-        pdf.cell(100, 5, f"Fecha: {datetime.now().strftime('%d/%m/%Y %H:%M')}", ln=True)
-        pdf.cell(100, 5, f"Cliente: {cliente if cliente else 'Cliente Varios'}", ln=True)
-        pdf.cell(100, 5, f"Método: {metodo_pago}", ln=True)
-        pdf.ln(2)
-        
-        # Tabla
-        pdf.set_font("Helvetica", "B", 9)
-        pdf.cell(50, 6, "Desc.", border="B")
-        pdf.cell(15, 6, "Cant.", border="B", align="R")
-        pdf.cell(15, 6, "P.U.", border="B", align="R")
-        pdf.cell(20, 6, "Total", border="B", align="R")
-        pdf.ln()
-        
-        pdf.set_font("Helvetica", "", 9)
-        for p in st.session_state.productos:
-            pdf.cell(50, 6, p['desc'])
-            pdf.cell(15, 6, str(p['cant']), align="R")
-            pdf.cell(15, 6, f"{p['precio']:.2f}", align="R")
-            pdf.cell(20, 6, f"{p['subtotal']:.2f}", align="R")
-            pdf.ln()
-            
-        pdf.ln(5)
-        pdf.set_font("Helvetica", "B", 10)
-        pdf.cell(100, 5, f"TOTAL: S/ {total_final:.2f}", ln=True, align="R")
-        
-        pdf.ln(10)
-        pdf.set_font("Helvetica", "I", 7)
-        pdf.multi_cell(100, 4, "Documento no válido como comprobante de pago ante SUNAT. Uso Informativo.", align="C")
-        
-        return pdf.output()
-
-    # Botón para descargar
-    pdf_bytes = crear_pdf()
-    st.download_button(
-        label="Descargar Nota de Venta (PDF) 📥",
-        data=pdf_bytes,
-        file_name=f"Nota_{numero_nota_str}.pdf",
-        mime="application/pdf"
-    )
+        st.download_button(
+            label="Descargar Nota (PDF) 📥",
+            data=pdf_output,
+            file_name=f"Nota_{numero_nota_str}.pdf",
+            mime="application/pdf"
+        )
