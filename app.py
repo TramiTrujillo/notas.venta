@@ -146,7 +146,7 @@ if submit_button:
         st.warning("Agrega productos antes de generar el PDF.")
     else:
         pdf_bytes = crear_pdf(n_nota, caja, vendedor, cliente, metodo, st.session_state.productos)
-        st.success("PDF generado con horario local de Perú.")
+        st.success("PDF generado según el formato oficial.")
         st.download_button(
             label="⬇️ Descargar Nota de Venta",
             data=pdf_bytes,
