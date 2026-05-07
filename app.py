@@ -1,6 +1,7 @@
 import streamlit as st
 from fpdf import FPDF
 from datetime import datetime
+import pytz  # Librería para manejar zonas horarias
 
 # --- Configuración ---
 st.set_page_config(page_title="Generador TramiTRUJILLO", page_icon="📄")
@@ -16,6 +17,10 @@ def total_a_letras(total):
 
 # --- Función Maestra del PDF ---
 def crear_pdf(n_nota, caja, vendedor, cliente, metodo, productos):
+    # Obtener hora de Perú (UTC-5)
+    tz_peru = pytz.timezone('America/Lima')
+    fecha_peru = datetime.now(tz_peru).strftime('%d-%m-%Y %H:%M')
+
     # Formato tipo ticket
     pdf = FPDF('P', 'mm', (105, 220)) 
     pdf.add_page()
@@ -36,7 +41,7 @@ def crear_pdf(n_nota, caja, vendedor, cliente, metodo, productos):
     pdf.cell(0, 5, f"NOTA DE VENTA N°: {n_nota}", ln=True)
     pdf.set_font("Helvetica", "", 9)
     pdf.cell(0, 5, f"Caja: {caja}", ln=True)
-    pdf.cell(0, 5, f"Fecha: {datetime.now().strftime('%d-%m-%Y %H:%M')}", ln=True)
+    pdf.cell(0, 5, f"Fecha: {fecha_peru}", ln=True) # Aquí usamos la hora de Perú
     pdf.cell(0, 5, f"Vendedor: {vendedor}", ln=True)
     pdf.cell(0, 5, f"Cliente: {cliente if cliente else 'Clientes Varios'}", ln=True)
     pdf.ln(2)
@@ -82,13 +87,12 @@ def crear_pdf(n_nota, caja, vendedor, cliente, metodo, productos):
     pdf.cell(0, 5, f"Método de pago: {metodo}", ln=True)
     pdf.ln(4)
     
-    # PIE DE PÁGINA CON WHATSAPP FUNCIONAL
+    # PIE DE PÁGINA
     pdf.set_font("Helvetica", "B", 9)
     pdf.cell(0, 5, "¡Gracias por su preferencia!", ln=True, align="C")
     pdf.set_font("Helvetica", "", 8)
     pdf.cell(0, 4, "Consulte nuestros servicios al 935534706", ln=True, align="C")
     
-    # Enlace de WhatsApp real
     pdf.set_text_color(0, 0, 255)
     pdf.set_font("Helvetica", "U", 8)
     wa_url = "https://wa.me/51935534706"
@@ -114,7 +118,7 @@ with st.form("datos_nota"):
         cliente = st.text_input("Cliente", value="Clientes Varios")
         metodo = st.selectbox("Método de Pago", ["Yape", "Efectivo", "Plin", "Transferencia"])
     
-    submit_button = st.form_submit_button("Generar PDF con Texto Completo")
+    submit_button = st.form_submit_button("Generar PDF")
 
 st.subheader("Añadir Productos")
 c1, c2, c3 = st.columns([3, 1, 1])
@@ -140,7 +144,7 @@ if submit_button:
         st.warning("Agrega productos antes de generar el PDF.")
     else:
         pdf_bytes = crear_pdf(n_nota, caja, vendedor, cliente, metodo, st.session_state.productos)
-        st.success("PDF generado según el formato oficial.")
+        st.success("PDF generado con horario local de Perú.")
         st.download_button(
             label="⬇️ Descargar Nota de Venta",
             data=pdf_bytes,
