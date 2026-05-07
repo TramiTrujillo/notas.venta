@@ -41,7 +41,7 @@ def crear_pdf(n_nota, caja, vendedor, cliente, metodo, productos):
     pdf.cell(0, 5, f"NOTA DE VENTA N°: {n_nota}", ln=True)
     pdf.set_font("Helvetica", "", 9)
     pdf.cell(0, 5, f"Caja: {caja}", ln=True)
-    pdf.cell(0, 5, f"Fecha: {fecha_peru}", ln=True) # Aquí usamos la hora de Perú
+    pdf.cell(0, 5, f"Fecha: {fecha_peru}", ln=True) 
     pdf.cell(0, 5, f"Vendedor: {vendedor}", ln=True)
     pdf.cell(0, 5, f"Cliente: {cliente if cliente else 'Clientes Varios'}", ln=True)
     pdf.ln(2)
@@ -103,7 +103,9 @@ def crear_pdf(n_nota, caja, vendedor, cliente, metodo, productos):
     pdf.set_font("Helvetica", "I", 7)
     pdf.multi_cell(0, 3, "Documento no válido como comprobante de pago ante SUNAT. Uso Informativo", align="C")
     
-    return bytes(pdf.output())
+    # --- EL CAMBIO ESTÁ AQUÍ ---
+    # Usamos dest='S' para retornar los bytes correctamente en FPDF
+    return pdf.output(dest='S').encode('latin-1')
 
 # --- Interfaz de Streamlit ---
 st.title("📄 Generador TramiTRUJILLO")
